@@ -4,7 +4,7 @@ import pandas as p
 
 
 def prepare_data_set():
-    dataset = p.read_excel('labelencoder_data_set_cat.xlsx')
+    dataset = p.read_excel('./data_sets/old_labelencoder_data_set_cat.xlsx')
     # print(f"{dataset.dtypes}")
     dataset = dataset.apply(p.to_numeric, errors='coerce')
     print(dataset.head())
@@ -86,7 +86,11 @@ def softmax(x, backpropagation=False):
 
 
 class NN:
-    def __init__(self, sizes=None, epochs=100, batches=100, learning_rate=0.001, dropout_rate=0.25):
+    def __init__(self, tr_x=train_x, tr_y=train_y, te_x=test_x, te_y=test_y, sizes=None, epochs=100, batches=100, learning_rate=0.001, dropout_rate=0.25):
+        self.train_x = tr_x
+        self.train_y = tr_y
+        self.test_x = te_x
+        self.test_y = te_y
         if sizes is None:
             sizes = [25, 100, 13]
         self.sizes = sizes
@@ -145,21 +149,16 @@ class NN:
                 correct_predictions += 1
         return correct_predictions / len(data)
 
-    def train(self, train_list, train_labels, test_list, test_labels):
+    def train(self):
         start_time = time.time()
         for i in range(self.epochs):
-            for data_batch, label_batch in batches_generator(train_list, train_labels, self.batches):
+            for data_batch, label_batch in batches_generator(self.train_x, self.train_y, self.batches):
             # for j in range(len(train_list)):
                 output = self.forward_prop(data_batch, train=True)
                 self.backward_prop(label_batch, output)
 
-            test_accuracy = self.compute_acc(test_list, test_labels)
-            train_accuracy = self.compute_acc(train_list, train_labels)
+            test_accuracy = self.compute_acc(self.test_x, self.test_y)
+            train_accuracy = self.compute_acc(self.train_x, self.train_y)
             print(f'Epoch: {i + 1}, Time Spent: {np.around(time.time() - start_time, 2)}s, '
                   f'Train accuracy: {np.around(train_accuracy * 100, 2)}%, '
                   f'Test accuracy: {np.around(test_accuracy * 100, 2)}%')
-
-
-if __name__ == "__main__":
-    nn = NN()
-    nn.train(train_x, train_y, test_x, test_y)
