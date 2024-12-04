@@ -1,6 +1,5 @@
 import numpy as np
 import openpyxl
-import pandas
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
 import pandas as pd
 import xlrd
@@ -10,9 +9,13 @@ from sklearn.preprocessing import LabelEncoder
 
 
 class PrepareDataSet:
-    def __init__(self, file_path='data_set_cat.xlsx'):
+    def __init__(self, file_path='./data_sets/data_set_cat.xlsx'):
         self.file_path = file_path
-        self.data = pandas.read_excel(self.file_path, 'Data')
+        self.data = pd.read_excel(self.file_path, 'Data')
+        self.dict_of_values_to_compare = {
+            'Sexe': ['M', 'F'],
+            'Race': ['BEN', 'SBI', 'BRI', 'CHA', 'EUR', 'MCO', 'PER', 'RAG', 'SPH', 'ORI', 'TUV', 'Autre', 'NSP']
+        }
 
     def detect_errors_in_data_set(self):
         result = dict()
@@ -31,7 +34,7 @@ class PrepareDataSet:
         # print(data['Logement'])
         return result
 
-    def compute_no_of_instances(self, atr='Logement'):
+    def compute_no_of_instances(self, atr='Race'):
         breed_set = set(self.data[atr])
         print(f'Breed set: {breed_set}')
         result = dict()
@@ -49,7 +52,6 @@ class PrepareDataSet:
 
     def plot_distribution_with_seaborn(self):
         numerical_columns = self.data.select_dtypes(include=['float64', 'int64']).columns
-
         # Apply the default theme
         sns.set_theme()
 
@@ -65,42 +67,45 @@ class PrepareDataSet:
             #     facet_kws=dict(sharex=False),
             # )
             sns.histplot(self.data[column], kde=True)
-
             plt.title(f'Distribution of {column}', fontsize=15)
             plt.xlabel(column, fontsize=10)
             plt.ylabel('Frequency', fontsize=10)
-
             plt.show()
 
-    # Handle missing data
+    def correct_data_set(self):
+        column_names = {col_index: self.data.columns[col_index] for col_index in range(2, 28)}
+        rows_to_drop = []
+
+        for column_index in range(2, 28):
+            current_col_name = column_names[column_index]
+            for row_index in range(0, len(self.data)):
+                value = self.data.iloc[row_index, column_index]
+                match current_col_name:
+                    case ('Ext' | 'Obs' | 'PredOiseau' | 'PredMamm'):
+                        self.data.iloc[row_index, column_index] = int(value) + 1
+                    case ('Sexe' | 'Race'):
+                        if str(value) not in self.dict_of_values_to_compare[current_col_name]:
+                            rows_to_drop.append(row_index)
+
+        # Eliminăm toate rândurile nevalide și resetăm indecșii
+        self.data.drop(index=rows_to_drop, inplace=True)
+        self.data.reset_index(drop=True, inplace=True)
+
+        # Scrierea setului de date corectat într-un fișier Excel
+        self.data.to_excel('./data_sets/corrected_data_set_cat.xlsx', index=False)
+
+    # One_Hot_Encoding
     def digit_convertor(self):
-        # pd.get_dummies(d).to_excel("encoded_data_set_cat.xlsx")
+        updated_data = pd.read_excel('./data_sets/corrected_data_set_cat.xlsx')
+        updated_data.drop('Horodateur', axis=1)
         label = LabelEncoder()
-        for column in self.data.select_dtypes(include=['object']).columns:
+        for column in updated_data.select_dtypes(include=['object']).columns:
             self.data[column] = label.fit_transform(self.data[column])
-        pd.get_dummies(self.data).to_excel("labelencoder_data_set_cat.xlsx")
 
+        ohe = pd.get_dummies(self.data, drop_first=True)
+        for column_index in range(len(ohe)):
+            for row_index in range(1, len(ohe)):
+                value = ohe.iloc[row_index, column_index]
+                ohe.iloc[row_index, column_index] = int(value) + 1
 
-p = PrepareDataSet()
-print(f"Error detections: {p.detect_errors_in_data_set()}")
-print(f"No. of instances per class: {p.compute_no_of_instances()}")
-print(f"Attributes and their value frequency: {p.compute_frequency_of_values()}")
-# p.digit_convertor()
-# p.plot_distribution_with_seaborn()
-
-
-# # Load the workbook and select the active sheet
-# file_path = 'labelencoder_data_set_cat.xlsx'
-# workbook = openpyxl.load_workbook(file_path)
-# sheet = workbook.active
-#
-# # Iterate through each column
-# for col in sheet.iter_cols():
-#     # Extract the values from the column (skip None values)
-#     values = [cell.value for cell in col if cell.value is not None]
-#
-#     for cell in col:
-#         if cell.value is not None:
-#             cell.value = ((cell.value + 1) - np.min(values)) / (np.max(values) - np.min(values))
-#
-# workbook.save('modified_file.xlsx')
+        ohe.to_excel("./data_sets/encoded_data_set_cat.xlsx", index=False)

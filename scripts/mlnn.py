@@ -4,7 +4,8 @@ import pandas as p
 
 
 def prepare_data_set():
-    dataset = p.read_excel('./data_sets/old_labelencoder_data_set_cat.xlsx')
+    # dataset = p.read_excel('./data_sets/old_labelencoder_data_set_cat.xlsx')
+    dataset = p.read_excel('./data_sets/corrected_data_set_cat.xlsx')
     # print(f"{dataset.dtypes}")
     dataset = dataset.apply(p.to_numeric, errors='coerce')
     print(dataset.head())
@@ -16,21 +17,22 @@ def prepare_data_set():
     #     print(f"'{col}': {val}")
 
     for col in dataset:
-        dataset[col] = (((dataset[col]+1) - (dataset[col].min()+1)) / ((dataset[col].max()+1) - (dataset[col].min()+1))).round(2)
+        dataset[col] = (((dataset[col]+1) - (dataset[col].min()+1)) /
+                        ((dataset[col].max()+1) - (dataset[col].min()+1))).round(2)
 
-    x = dataset.drop(['Race', 'Plus'], axis=1).values
+    x = dataset.drop(['Race', 'Plus', 'Row.names', 'Horodateur'], axis=1).values
     y = dataset['Race'].values
 
     # makes sure that the randomizers work the same all the time!
     # np.random.seed(42)
 
-    indicies = np.arange(x.shape[0])
-    np.random.shuffle(indicies)
+    indexes = np.arange(x.shape[0])
+    np.random.shuffle(indexes)
 
-    train_indicies = indicies[:int(0.8*len(indicies))]
-    test_indicies = indicies[int(0.8*len(indicies)):]
+    train_indexes = indexes[:int(0.8*len(indexes))]
+    test_indexes = indexes[int(0.8*len(indexes)):]
     # train_x, train_y, test_x, test_y
-    return x[train_indicies], y[train_indicies], x[test_indicies], y[test_indicies]
+    return x[train_indexes], y[train_indexes], x[test_indexes], y[test_indexes]
 
 
 train_x, train_y, test_x, test_y = prepare_data_set()
@@ -41,7 +43,7 @@ print(f"Here we got the length of the first training data: {len(train_x[0])};\n\
       f" The head of training data: \n{train_x[:10]};\n\n"
       f" The first training data:\n {train_x[0]};\n\n"
       f" The first training label:\n {train_y[0]};\n\n"
-      f" And the shape of training data:\n {train_x.shape}")
+      f" And the shape of training data:\n {train_x.shape}\n")
 
 
 def batches_generator(train_data, train_labels, no_of_batches):
@@ -85,8 +87,9 @@ def softmax(x, backpropagation=False):
     return s
 
 
-class NN:
-    def __init__(self, tr_x=train_x, tr_y=train_y, te_x=test_x, te_y=test_y, sizes=None, epochs=100, batches=100, learning_rate=0.001, dropout_rate=0.25):
+class MLNN:
+    def __init__(self, tr_x=train_x, tr_y=train_y, te_x=test_x, te_y=test_y,
+                 sizes=None, epochs=50, batches=100, learning_rate=0.001, dropout_rate=0.25):
         self.train_x = tr_x
         self.train_y = tr_y
         self.test_x = te_x
@@ -142,7 +145,6 @@ class NN:
 
     def compute_acc(self, data, labels):
         correct_predictions = 0
-        # for data_batch, label_batch in batches_generator(data, labels, self.batches):
         for i in range(len(data)):
             output = self.forward_prop(data[i], train=False)
             if np.argmax(output) == np.argmax(labels[i]):
@@ -153,7 +155,6 @@ class NN:
         start_time = time.time()
         for i in range(self.epochs):
             for data_batch, label_batch in batches_generator(self.train_x, self.train_y, self.batches):
-            # for j in range(len(train_list)):
                 output = self.forward_prop(data_batch, train=True)
                 self.backward_prop(label_batch, output)
 
