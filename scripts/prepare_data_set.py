@@ -105,7 +105,39 @@ class PrepareDataSet:
         ohe = pd.get_dummies(self.data, drop_first=True)
         for column_index in range(len(ohe)):
             for row_index in range(1, len(ohe)):
-                value = ohe.iloc[row_index, column_index]
-                ohe.iloc[row_index, column_index] = int(value) + 1
+                value = int(ohe.iloc[row_index, column_index])
+                ohe.iloc[row_index, column_index] = value + 1
 
         ohe.to_excel("./data_sets/encoded_data_set_cat.xlsx", index=False)
+
+    # One_Hot_Encoding
+    def ohe_plus_one(self):
+        updated_data = pd.read_excel('./data_sets/old_labelencoder_data_set_cat.xlsx')
+
+        for column_index in range(0, 26):
+            for row_index in range(0, len(updated_data)):
+                value = int(updated_data.iloc[row_index, column_index])
+                updated_data.iloc[row_index, column_index] = value + 1
+
+        updated_data.to_excel("./data_sets/encoded_data_set_cat.xlsx", index=False)
+
+    # # One_Hot_Encoding
+    # def digit_convertor(self):
+    #     updated_data = pd.read_excel('./data_sets/corrected_data_set_cat.xlsx')
+    #     label = LabelEncoder()
+    #
+    #     columns_to_encode = ['Sexe', 'Age', 'Race', 'Nombre', 'Logement', 'Zone', 'Abondance']
+    #
+    #     for col in columns_to_encode:
+    #         if col in updated_data.columns:
+    #             updated_data[col] = label.fit_transform(updated_data[col])
+    #
+    #     ohe = pd.get_dummies(updated_data, drop_first=True)
+    #     for column_index in range(len(ohe)):
+    #         for row_index in range(1, len(ohe)):
+    #             value = ohe.iloc[row_index, column_index]
+    #             ohe.iloc[row_index, column_index] = int(value) + 1
+    #
+    #     ohe.to_excel("./data_sets/encoded_data_set_cat.xlsx", index=False)
+    #
+    #     updated_data.to_excel("./data_sets/encoded_data_set_cat.xlsx", index=False)

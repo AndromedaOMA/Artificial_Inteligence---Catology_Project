@@ -5,7 +5,8 @@ import pandas as p
 
 def prepare_data_set():
     # dataset = p.read_excel('./data_sets/old_labelencoder_data_set_cat.xlsx')
-    dataset = p.read_excel('./data_sets/corrected_data_set_cat.xlsx')
+    dataset = p.read_excel('./data_sets/encoded_data_set_cat.xlsx')
+    # dataset = p.read_excel('./data_sets/corrected_data_set_cat.xlsx')
     # print(f"{dataset.dtypes}")
     dataset = dataset.apply(p.to_numeric, errors='coerce')
     print(dataset.head())
@@ -20,7 +21,8 @@ def prepare_data_set():
         dataset[col] = (((dataset[col]+1) - (dataset[col].min()+1)) /
                         ((dataset[col].max()+1) - (dataset[col].min()+1))).round(2)
 
-    x = dataset.drop(['Race', 'Plus', 'Row.names', 'Horodateur'], axis=1).values
+    x = dataset.drop(['Race', 'Plus'], axis=1).values
+    # x = dataset.drop(['Race', 'Plus', 'Row.names', 'Horodateur'], axis=1).values
     y = dataset['Race'].values
 
     # makes sure that the randomizers work the same all the time!
