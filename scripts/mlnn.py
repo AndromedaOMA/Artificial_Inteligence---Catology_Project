@@ -159,7 +159,6 @@ class MLNN:
                 self.backward_prop(label_batch, output)
 
             test_accuracy = self.compute_acc(self.test_x, self.test_y)
-            train_accuracy = self.compute_acc(self.train_x, self.train_y)
-            print(f'Epoch: {i + 1}, Time Spent: {np.around(time.time() - start_time, 2)}s, '
-                  f'Train accuracy: {np.around(train_accuracy * 100, 2)}%, '
+            print(f'Epoch: {i + 1}, '
+                  f'Time Spent: {np.around(time.time() - start_time, 2)}s, '
                   f'Test accuracy: {np.around(test_accuracy * 100, 2)}%')
