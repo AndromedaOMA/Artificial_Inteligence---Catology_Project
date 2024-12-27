@@ -1,9 +1,5 @@
-import numpy as np
-import openpyxl
-from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
-import pandas as pd
-import xlrd
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 from sklearn.preprocessing import LabelEncoder
 
