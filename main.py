@@ -28,3 +28,4 @@ if __name__ == "__main__":
     si.alpha_frequency_plot()
     keywords = si.keyword_extraction()
     print(f"Extracted the keywords: {keywords}")
+    si.generate_phrase()

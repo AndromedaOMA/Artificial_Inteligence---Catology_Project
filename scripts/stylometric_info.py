@@ -1,14 +1,17 @@
+import datetime
 from nltk.tokenize import word_tokenize
 import nltk
 import matplotlib.pyplot as plt
-from collections import Counter
+# from collections import Counter
 from rake_nltk import Rake
+from groq import Groq
 # nltk.download('punkt_tab')
 nltk.download('stopwords')
 
 
 class StylometricInfo:
     def __init__(self, text, language):
+        self.keywords = None
         self.alpha_tokens_frequency = None
         self.filtered_tokens = None
         self.text = text
@@ -73,7 +76,42 @@ class StylometricInfo:
                 "tabby", "fluffy", "active", "calm", "friendly", "playful", "smart", "beautiful", "pet", "animal", "domestic"]
         r = Rake(stopwords=stopwords)
         r.extract_keywords_from_text(self.text)
-        return r.get_ranked_phrases()
+        self.keywords = r.get_ranked_phrases()
+        return self.keywords
 
     def generate_phrase(self):
-        pass
+        # keywords_values = [str(keyword) for keyword in self.keywords]
+        # print(f"TEST:"
+        #       f"text -> {self.text}"
+        #       f"kewwords -> {keywords_values}")
+        # print(f"Voi furniza o list[ de cuvinte cheie: {str(self.keywords)}"
+        #                        f" și propoziția de unde provin aceste cuvinte cheie: {str(self.text)}"
+        #                        f". Generează câte o propoziție pentru fiecare cuvânt cheie, "
+        #                        f"dar fiecare cuvânt cheie trebuie să-și păstreze contextul din "
+        #                        f"propoziția inițială.")
+        client = Groq(
+            api_key="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",
+        )
+        completion = client.chat.completions.create(
+            model="llama3-groq-70b-8192-tool-use-preview",
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"Voi furniza o listă de cuvinte cheie: {str(self.keywords)}"
+                               f" și propoziția de unde provin aceste cuvinte cheie: {str(self.text)}"
+                               f". Generează câte o propoziție pentru fiecare cuvânt cheie, "
+                               f"dar fiecare cuvânt cheie trebuie să-și păstreze contextul din "
+                               f"propoziția inițială. Nu folosi niciun tool suplimentar. "
+                               f"Răspunsurile trebuie să fie doar text simplu."
+                }
+            ],
+            temperature=0.5,
+            max_tokens=1024,
+            top_p=0.65,
+            stream=False,
+            stop=None,
+        )
+
+        if not completion.choices or not completion.choices[0].message.content:
+            raise ValueError("No valid content received from the model.")
+        print(completion.choices[0].message.content)
