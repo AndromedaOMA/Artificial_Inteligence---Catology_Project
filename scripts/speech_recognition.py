@@ -7,9 +7,6 @@ class SpeechRec:
 
     def record_and_transcribe(self):
         try:
-            # text = "Mă numesc Marius și nu vreau să merg acasă! M-am săturat să merg cu trenul! Mă doare capul... Tu nu?"
-            # language = "ro-RO"
-            # return text, language
             with sr.Microphone() as source:
                 print("Adjusting for ambient noise... Please wait.")
                 self.recognizer.adjust_for_ambient_noise(source, duration=1)

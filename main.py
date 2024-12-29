@@ -26,7 +26,6 @@ if __name__ == "__main__":
     si.prepare_alpha_tokens()
     si.word_frequency_plot()
     si.alpha_frequency_plot()
-    keywords = si.keyword_extraction()
-    print(f"Extracted the keywords: {keywords}")
+    si.keyword_extraction()
     si.generate_phrase()
     si.nlp_processing()

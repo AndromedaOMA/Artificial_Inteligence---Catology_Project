@@ -8,6 +8,7 @@ from groq import Groq
 import stanza
 from spacy_stanza import load_pipeline
 import rowordnet
+import xml.etree.ElementTree as ET
 
 # nltk.download('punkt_tab')
 nltk.download('stopwords')
@@ -15,7 +16,27 @@ stanza.download('ro')
 
 
 def print_separator():
-    print("----------------------------------")
+    print("-" * 40)
+
+
+def search_word(word, root):
+    results = []
+    for synset in root.findall("SYNSET"):
+        lemmas = [literal.text for literal in synset.findall("SYNONYM/LITERAL")]
+        if word in lemmas:
+            gloss = synset.find("DEF").text if synset.find("DEF") is not None else "No definition"
+            results.append((synset.get("id"), lemmas, gloss))
+    return results
+
+
+# Extract only synonyms (excluding the searched word)
+def get_synonyms(word, root):
+    synonyms = set()
+    results = search_word(word, root)
+    for synset_id, lemmas, gloss in results:
+        for lemma in lemmas:
+            synonyms.add(lemma)
+    return list(synonyms)
 
 
 class StylometricInfo:
@@ -36,6 +57,7 @@ class StylometricInfo:
         # no punctuation
         self.filtered_tokens = ([token for token in tokens if token.isalpha()])
         print(f"Prepared the tokens: {self.filtered_tokens}")
+        print_separator()
 
     def prepare_alpha_tokens(self):
         clean_tokens = self.filtered_tokens
@@ -46,7 +68,7 @@ class StylometricInfo:
                 alpha_dict[c.lower()] = alpha_dict.get(c.lower(), 0) + 1
 
         print(f"Prepared the frewquency of chars: {alpha_dict}")
-
+        print_separator()
         self.alpha_tokens_frequency = alpha_dict.values()
 
     def word_length_frequency_plot(self):
@@ -100,20 +122,22 @@ class StylometricInfo:
                     "domestic"]
         r = Rake(stopwords=stopwords)
         r.extract_keywords_from_text(self.text)
-        self.keywords = r.get_ranked_phrases()
-        self.keywords = [kw for kw in self.keywords if len(kw.split()) == 1]
-        return self.keywords
+        self.keywords = [kw for kw in r.get_ranked_phrases() if len(kw.split()) <= 2]
+        print(f"Extracted the keywords: {self.keywords}")
+        print_separator()
 
     def generate_phrase(self):
         # keywords_values = [str(keyword) for keyword in self.keywords]
         # print(f"TEST:"
         #       f"text -> {self.text}"
         #       f"kewwords -> {keywords_values}")
-        # print(f"Voi furniza o list[ de cuvinte cheie: {str(self.keywords)}"
-        #                        f" și propoziția de unde provin aceste cuvinte cheie: {str(self.text)}"
-        #                        f". Generează câte o propoziție pentru fiecare cuvânt cheie, "
-        #                        f"dar fiecare cuvânt cheie trebuie să-și păstreze contextul din "
-        #                        f"propoziția inițială.")
+        # print(f"Voi furniza o listă de cuvinte cheie: {str(self.keywords)} "
+        #       f"și propoziția de unde provin aceste cuvinte cheie "
+        #       f"pentru a extrage contextul lor: {str(self.text)}."
+        #       f"Generează câte o propoziție pentru fiecare cuvânt cheie, "
+        #       f"dar fiecare cuvânt cheie trebuie să-și păstreze contextul din "
+        #       f"propoziția inițială. Nu folosi niciun tool suplimentar. "
+        #       f"Răspunsurile trebuie să fie doar text simplu.")
         client = Groq(
             api_key="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",
         )
@@ -122,9 +146,10 @@ class StylometricInfo:
             messages=[
                 {
                     "role": "user",
-                    "content": f"Voi furniza o listă de cuvinte cheie: {str(self.keywords)}"
-                               f" și propoziția de unde provin aceste cuvinte cheie: {str(self.text)}"
-                               f". Generează câte o propoziție pentru fiecare cuvânt cheie, "
+                    "content": f"Voi furniza o listă de cuvinte cheie: {str(self.keywords)} "
+                               f"și propoziția de unde provin aceste cuvinte cheie "
+                               f"pentru a extrage contextul lor: {str(self.text)}."
+                               f"Generează câte o propoziție pentru fiecare cuvânt cheie, "
                                f"dar fiecare cuvânt cheie trebuie să-și păstreze contextul din "
                                f"propoziția inițială. Nu folosi niciun tool suplimentar. "
                                f"Răspunsurile trebuie să fie doar text simplu."
@@ -139,6 +164,7 @@ class StylometricInfo:
 
         if not completion.choices or not completion.choices[0].message.content:
             raise ValueError("No valid content received from the model.")
+
         print(completion.choices[0].message.content)
         print_separator()
 
@@ -153,15 +179,22 @@ class StylometricInfo:
 
         self.synonym_detector()
 
+    # def synonym_detector(self):
+    #     """source: https://github.com/dumitrescustefan/RoWordNet/blob/master/jupyter/synonym_antonym.ipynb"""
+    #     wordnet = rowordnet.RoWordNet()
+    #     for token in self.filtered_tokens:
+    #         synset_id = wordnet.synsets(literal=token)
+    #         if synset_id:
+    #             print(f"Token: {token}")
+    #             synset = wordnet(synset_id[0])
+    #             # wordnet.print_synset(synset_id[0])
+    #             literals = list(synset.literals)
+    #             print(f"Synonym: {str(literals)}")
+    #             print_separator()
+
     def synonym_detector(self):
-        """source: https://github.com/dumitrescustefan/RoWordNet/blob/master/jupyter/synonym_antonym.ipynb"""
-        wordnet = rowordnet.RoWordNet()
+        tree = ET.parse("RoWordNet/xml/rown.xml")
+        root = tree.getroot()
         for token in self.filtered_tokens:
-            synset_id = wordnet.synsets(literal=token)
-            if synset_id:
-                print(f"Token: {token}")
-                synset = wordnet(synset_id[0])
-                # wordnet.print_synset(synset_id[0])
-                literals = list(synset.literals)
-                print(f"Synonym: {str(literals)}")
-                print_separator()
+            print(f"Token: {token} -> Synonyms: {get_synonyms(token, root)}")
+        print_separator()
