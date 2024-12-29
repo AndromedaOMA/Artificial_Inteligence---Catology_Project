@@ -8,11 +8,8 @@ class SpeechRec:
     def record_and_transcribe(self):
         try:
             # text = "Mă numesc Marius și nu vreau să merg acasă! M-am săturat să merg cu trenul! Mă doare capul... Tu nu?"
-#             text = """spaCy is an open-source software library for advanced natural language processing,
-# written in the programming languages Python and Cython. The library is published under the MIT license
-# and its main developers are Matthew Honnibal and Ines Montani, the founders of the software company Explosion."""
-#             language = "ro-RO"
-#             return text, language
+            # language = "ro-RO"
+            # return text, language
             with sr.Microphone() as source:
                 print("Adjusting for ambient noise... Please wait.")
                 self.recognizer.adjust_for_ambient_noise(source, duration=1)

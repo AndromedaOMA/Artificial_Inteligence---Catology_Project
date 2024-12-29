@@ -29,3 +29,4 @@ if __name__ == "__main__":
     keywords = si.keyword_extraction()
     print(f"Extracted the keywords: {keywords}")
     si.generate_phrase()
+    si.nlp_processing()

@@ -5,8 +5,17 @@ import matplotlib.pyplot as plt
 # from collections import Counter
 from rake_nltk import Rake
 from groq import Groq
+import stanza
+from spacy_stanza import load_pipeline
+import rowordnet
+
 # nltk.download('punkt_tab')
 nltk.download('stopwords')
+stanza.download('ro')
+
+
+def print_separator():
+    print("----------------------------------")
 
 
 class StylometricInfo:
@@ -58,25 +67,41 @@ class StylometricInfo:
 
     def keyword_extraction(self):
         match self.language:
-            case "ro-RO": stopwords = [
-                "un", "o", "aceasta", "acesta", "care", "despre", "este", "sunt", "in", "pe", "din", "si", "de", "la",
-                "cu", "noi", "al", "ai", "este", "pentru", "mai", "nu", "cat", "culoare", "cu", "mane", "blana", "lunga", "scurta",
-                "mare", "mica", "gri", "alb", "negru", "rosu", "tip", "colorat", "si", "vital", "animale", "domestice", "specie", "rasă",
-                "ochi", "urechi", "bot", "picioare", "coada", "permanent", "activ"]
-            case "fr-FR": stopwords = [
-                "un", "une", "des", "le", "la", "les", "cette", "ce", "il", "elle", "nous", "vous", "ils", "elles", "de", "dans",
-                "pour", "sur", "avec", "par", "comme", "est", "sont", "a", "à", "au", "aux", "être", "avoir", "lui", "leur", "ses",
-                "les", "cette", "autre", "chat", "chatte", "grande", "petit", "moyenne", "longue", "courte", "poils", "noir", "blanc",
-                "gris", "rouge", "caractère", "type", "pattes", "nez", "yeux", "intelligent", "calme", "actif", "mignon"]
-            case "en-US": stopwords = [
-                "a", "an", "the", "and", "or", "but", "with", "in", "on", "at", "of", "for", "to", "by", "is", "are", "was",
-                "were", "am", "i", "you", "he", "she", "we", "they", "my", "his", "her", "its", "their", "that", "this", "which",
-                "has", "have", "had", "it", "these", "those", "be", "being", "been", "has", "have", "having", "cat", "breed", "color",
-                "long", "short", "fur", "eyes", "ears", "tail", "coat", "paws", "gray", "black", "white", "brown", "striped",
-                "tabby", "fluffy", "active", "calm", "friendly", "playful", "smart", "beautiful", "pet", "animal", "domestic"]
+            case "ro-RO":
+                stopwords = [
+                    "un", "o", "aceasta", "acesta", "care", "despre", "este", "sunt", "in", "pe", "din", "si", "de",
+                    "la",
+                    "cu", "noi", "al", "ai", "este", "pentru", "mai", "nu", "cat", "culoare", "cu", "mane", "blana",
+                    "lunga", "scurta",
+                    "mare", "mica", "gri", "alb", "negru", "rosu", "tip", "colorat", "si", "vital", "animale",
+                    "domestice", "specie", "rasă",
+                    "ochi", "urechi", "bot", "picioare", "coada", "permanent", "activ"]
+            case "fr-FR":
+                stopwords = [
+                    "un", "une", "des", "le", "la", "les", "cette", "ce", "il", "elle", "nous", "vous", "ils", "elles",
+                    "de", "dans",
+                    "pour", "sur", "avec", "par", "comme", "est", "sont", "a", "à", "au", "aux", "être", "avoir", "lui",
+                    "leur", "ses",
+                    "les", "cette", "autre", "chat", "chatte", "grande", "petit", "moyenne", "longue", "courte",
+                    "poils", "noir", "blanc",
+                    "gris", "rouge", "caractère", "type", "pattes", "nez", "yeux", "intelligent", "calme", "actif",
+                    "mignon"]
+            case "en-US":
+                stopwords = [
+                    "a", "an", "the", "and", "or", "but", "with", "in", "on", "at", "of", "for", "to", "by", "is",
+                    "are", "was",
+                    "were", "am", "i", "you", "he", "she", "we", "they", "my", "his", "her", "its", "their", "that",
+                    "this", "which",
+                    "has", "have", "had", "it", "these", "those", "be", "being", "been", "has", "have", "having", "cat",
+                    "breed", "color",
+                    "long", "short", "fur", "eyes", "ears", "tail", "coat", "paws", "gray", "black", "white", "brown",
+                    "striped",
+                    "tabby", "fluffy", "active", "calm", "friendly", "playful", "smart", "beautiful", "pet", "animal",
+                    "domestic"]
         r = Rake(stopwords=stopwords)
         r.extract_keywords_from_text(self.text)
         self.keywords = r.get_ranked_phrases()
+        self.keywords = [kw for kw in self.keywords if len(kw.split()) == 1]
         return self.keywords
 
     def generate_phrase(self):
@@ -115,3 +140,28 @@ class StylometricInfo:
         if not completion.choices or not completion.choices[0].message.content:
             raise ValueError("No valid content received from the model.")
         print(completion.choices[0].message.content)
+        print_separator()
+
+    def nlp_processing(self):
+        # snlp = stanza.Pipeline(lang="ro")
+        nlp = load_pipeline("ro")
+
+        doc = nlp(self.text)
+        for token in doc:
+            print(f"Token: {token.text}, Lemma: {token.lemma_}, POS: {token.pos_}")
+        print_separator()
+
+        self.synonym_detector()
+
+    def synonym_detector(self):
+        """source: https://github.com/dumitrescustefan/RoWordNet/blob/master/jupyter/synonym_antonym.ipynb"""
+        wordnet = rowordnet.RoWordNet()
+        for token in self.filtered_tokens:
+            synset_id = wordnet.synsets(literal=token)
+            if synset_id:
+                print(f"Token: {token}")
+                synset = wordnet(synset_id[0])
+                # wordnet.print_synset(synset_id[0])
+                literals = list(synset.literals)
+                print(f"Synonym: {str(literals)}")
+                print_separator()
