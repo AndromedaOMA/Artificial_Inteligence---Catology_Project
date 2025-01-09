@@ -29,3 +29,5 @@ if __name__ == "__main__":
     si.keyword_extraction()
     si.generate_phrase()
     si.nlp_processing()
+
+    # Pisica mea e grasă și are o blană portocalie și are personalitate

@@ -142,7 +142,7 @@ class StylometricInfo:
             api_key="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",
         )
         completion = client.chat.completions.create(
-            model="llama3-groq-70b-8192-tool-use-preview",
+            model="llama-3.3-70b-versatile",
             messages=[
                 {
                     "role": "user",
