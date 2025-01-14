@@ -27,7 +27,8 @@ if __name__ == "__main__":
     si.word_frequency_plot()
     si.alpha_frequency_plot()
     si.keyword_extraction()
-    si.generate_phrase()
+    # si.generate_phrase()
     si.nlp_processing()
+    si.breed_comparation()
 
     # Pisica mea e grasă și are o blană portocalie și are personalitate

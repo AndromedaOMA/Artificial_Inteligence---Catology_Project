@@ -122,22 +122,11 @@ class StylometricInfo:
                     "domestic"]
         r = Rake(stopwords=stopwords)
         r.extract_keywords_from_text(self.text)
-        self.keywords = [kw for kw in r.get_ranked_phrases() if len(kw.split()) <= 2]
+        self.keywords = [kw for kw in r.get_ranked_phrases() if len(kw.split()) <= 4]
         print(f"Extracted the keywords: {self.keywords}")
         print_separator()
 
     def generate_phrase(self):
-        # keywords_values = [str(keyword) for keyword in self.keywords]
-        # print(f"TEST:"
-        #       f"text -> {self.text}"
-        #       f"kewwords -> {keywords_values}")
-        # print(f"Voi furniza o listă de cuvinte cheie: {str(self.keywords)} "
-        #       f"și propoziția de unde provin aceste cuvinte cheie "
-        #       f"pentru a extrage contextul lor: {str(self.text)}."
-        #       f"Generează câte o propoziție pentru fiecare cuvânt cheie, "
-        #       f"dar fiecare cuvânt cheie trebuie să-și păstreze contextul din "
-        #       f"propoziția inițială. Nu folosi niciun tool suplimentar. "
-        #       f"Răspunsurile trebuie să fie doar text simplu.")
         client = Groq(
             api_key="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",
         )
@@ -197,4 +186,34 @@ class StylometricInfo:
         root = tree.getroot()
         for token in self.filtered_tokens:
             print(f"Token: {token} -> Synonyms: {get_synonyms(token, root)}")
+        print_separator()
+
+    def breed_comparation(self):
+        client = Groq(
+            api_key="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",
+        )
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"Voi furniza o listă de cuvinte cheie: {str(self.keywords)} "
+                               f"și propoziția de unde provin aceste cuvinte cheie "
+                               f"pentru a extrage contextul lor: {str(self.text)}."
+                               f"Generați o descriere în limbaj natural a rasei "
+                               f"de pisici pe care o depistezi din context-ul propoziției, apoi generați "
+                               f"o comparație în limbaj natural între două rase."
+                }
+            ],
+            temperature=0.5,
+            max_tokens=1024,
+            top_p=0.65,
+            stream=False,
+            stop=None,
+        )
+
+        if not completion.choices or not completion.choices[0].message.content:
+            raise ValueError("No valid content received from the model.")
+
+        print(completion.choices[0].message.content)
         print_separator()
